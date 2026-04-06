@@ -133,10 +133,10 @@ def call_llm(prompt: str) -> str:
     return response.json()["choices"][0]["message"]["content"].strip()
 
 
-def run_analysis(client: Client) -> str:
+def run_analysis(client: Client) -> tuple[str, list[str], dict[str, int]]:
     """Full analysis cycle: fetch → detect → summarize with LLM.
 
-    Returns the final report as a string.
+    Returns (report_text, findings, event_counts_by_source).
     """
     logger.info("[analyzer] Fetching recent events...")
     events = fetch_recent_events(client, hours=24)
@@ -146,8 +146,12 @@ def run_analysis(client: Client) -> str:
     for f in findings:
         logger.info("[analyzer] %s", f)
 
+    event_counts: dict[str, int] = {}
+    for e in events:
+        event_counts[e["source"]] = event_counts.get(e["source"], 0) + 1
+
     prompt = build_prompt(events, findings)
     logger.info("[analyzer] Calling LLM for report generation...")
     report = call_llm(prompt)
 
-    return report
+    return report, findings, event_counts

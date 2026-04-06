@@ -7,6 +7,7 @@ from src.collector.football import FootballCollector
 from src.collector.spotify import SpotifyCollector
 from src.db.clickhouse import get_client, setup_table, insert_events
 from src.agent.analyzer import run_analysis
+from src.reporter.markdown import save_report
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,11 +45,15 @@ def run_pipeline() -> None:
 
     # Run analysis on accumulated data
     logger.info("Starting analysis cycle...")
-    report = run_analysis(client)
+    report, findings, event_counts = run_analysis(client)
+
+    filepath = save_report(report, findings, event_counts)
+
     print("\n" + "="*60)
     print("PIPELINE HEALTH REPORT")
     print("="*60)
     print(report)
+    print(f"\nFull report saved to: {filepath}")
     print("="*60 + "\n")
 
 
